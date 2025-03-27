@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 import * as Location from 'expo-location';
 import { getWeatherByCity, getWeatherByCoords } from './api';
 
@@ -27,8 +27,8 @@ export default function App() {
       let location = await Location.getCurrentPositionAsync({});
       const data = await getWeatherByCoords(location.coords.latitude, location.coords.longitude);
       if (data) {
-        setWeather(data.currentWeather);  // Huidig weer
-        setForecast(data.fiveDayForecast);  // 5-daagse voorspelling
+        setWeather(data.currentWeather);  // Current weather
+        setForecast(data.fiveDayForecast);  // 5-day forecast
       } else {
         setError("Unable to fetch weather data.");
       }
@@ -47,8 +47,8 @@ export default function App() {
     try {
       const data = await getWeatherByCity(city);
       if (data) {
-        setWeather(data.currentWeather);  // Huidig weer
-        setForecast(data.fiveDayForecast);  // 5-daagse voorspelling
+        setWeather(data.currentWeather);  // Current weather
+        setForecast(data.fiveDayForecast);  // 5-day forecast
       } else {
         setError("Unable to fetch weather data.");
       }
@@ -65,7 +65,7 @@ export default function App() {
       return <Text>No weather data available.</Text>;
     }
 
-    // De huidige weersomstandigheden
+    // Current weather conditions
     const currentWeather = {
       temp: weather.main?.temp,
       description: weather.weather?.[0]?.description,
@@ -74,7 +74,7 @@ export default function App() {
       wind: weather.wind?.speed,
     };
 
-    // Controleer of de gegevens compleet zijn
+    // Check if data is complete
     if (!currentWeather.temp) {
       return <Text>Data is incomplete. Please try again later.</Text>;
     }
@@ -82,7 +82,7 @@ export default function App() {
     const dailyForecasts = [];
     const currentDate = new Date().toDateString();
 
-    // Filter de 5-daagse voorspelling
+    // Filter the 5-day forecast
     for (let i = 0; i < forecast.length; i++) {
       const item = forecast[i];
       const forecastDate = new Date(item.dt * 1000).toDateString();
@@ -100,12 +100,12 @@ export default function App() {
     }
 
     return (
-      <View>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', textAlign: 'center' }}>{weather.name}</Text>
-        
-        {/* Huidige dag */}
-        <View style={{ padding: 10 }}>
-          <Text style={{ fontSize: 20 }}>Today</Text>
+      <View style={styles.weatherContainer}>
+        <Text style={styles.cityName}>{weather.name}</Text>
+
+        {/* Current day */}
+        <View style={styles.todayContainer}>
+          <Text style={styles.todayTitle}>Today</Text>
           <Text>Temp: {currentWeather.temp}°C</Text>
           <Text>{currentWeather.description}</Text>
           <Text>Min Temp: {currentWeather.temp_min}°C</Text>
@@ -113,14 +113,14 @@ export default function App() {
           <Text>Wind Speed: {currentWeather.wind} m/s</Text>
         </View>
 
-        {/* 5-daagse voorspelling */}
-        <Text style={{ fontSize: 20, marginTop: 20, textAlign: 'center' }}>5-Day Forecast</Text>
+        {/* 5-day forecast */}
+        <Text style={styles.forecastTitle}>5-Day Forecast</Text>
         <FlatList
           data={dailyForecasts}
           keyExtractor={(item) => item.date}
           renderItem={({ item }) => (
-            <View style={{ padding: 10, borderBottomWidth: 1 }}>
-              <Text style={{ fontSize: 18 }}>{item.date}</Text>
+            <View style={styles.forecastItem}>
+              <Text>{item.date}</Text>
               <Text>Temp: {item.temp}°C</Text>
               <Text>{item.description}</Text>
               <Text>Min Temp: {item.temp_min}°C</Text>
@@ -134,9 +134,9 @@ export default function App() {
   };
 
   return (
-    <View style={{ padding: 20, flex: 1, justifyContent: 'center' }}>
+    <View style={styles.container}>
       <TextInput
-        style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
+        style={styles.input}
         placeholder="Enter city name"
         value={city}
         onChangeText={setCity}
@@ -145,9 +145,61 @@ export default function App() {
 
       {loading && <ActivityIndicator size="large" color="blue" />}
 
-      {error && <Text style={{ color: 'red' }}>{error}</Text>}
+      {error && <Text style={styles.errorText}>{error}</Text>}
 
       {renderWeatherData()}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f5',  // Light background color
+  },
+  input: {
+    borderWidth: 1,  // Light border
+    borderColor: '#ddd',  // Light gray border
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 20,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  weatherContainer: {
+    marginTop: 20,
+  },
+  cityName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#333',  // Darker text for readability
+  },
+  todayContainer: {
+    marginTop: 10,
+  },
+  todayTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  forecastTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 20,
+    color: '#333',
+  },
+  forecastItem: {
+    marginVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    paddingBottom: 10,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+});
